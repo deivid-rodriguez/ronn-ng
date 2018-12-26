@@ -1,7 +1,21 @@
 nested_list test
 ================
 
-## TEST
+## One level
+
+* foo
+* bar
+* baz
+
+## Two levels
+
+* foo
+* bar
+  * foo-2
+  * bar-2
+* baz
+
+## Mixed ul and dl
 
 * foo:
   Blablabla.
@@ -17,3 +31,22 @@ nested_list test
 
 * baz:
   Blablabla.
+
+## Nested three deep
+
+* foo
+* bar
+  * foo-2
+  * bar-2
+    * foo-3
+    * bar-3
+  * baz-2
+    * foo-3
+  * qux-2
+* baz
+
+## ol
+
+1. foo
+2. bar
+3. baz
