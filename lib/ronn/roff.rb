@@ -11,6 +11,8 @@ module Ronn
     def initialize(html_fragment, name, section, tagline, manual = nil,
                    version = nil, date = nil)
       @buf = []
+      @list_indent_per_level = 1
+      @list_level = 0
       title_heading name, section, tagline, manual, version, date
       doc = Nokogiri::HTML.fragment(html_fragment)
       remove_extraneous_elements! doc
@@ -24,6 +26,20 @@ module Ronn
     end
 
     protected
+
+    def push_list
+      @list_level = @list_level + 1
+      macro "RS" if @list_level > 1
+    end
+
+    def pop_list
+      @list_level = @list_level - 1
+      macro "RE" if @list_level > 0
+    end
+
+    def current_list_indent
+      @list_level * @list_indent_per_level
+    end
 
     def previous(node)
       return unless node.respond_to?(:previous)
@@ -141,30 +157,36 @@ module Ronn
           macro 'IP', %w["" 0] if indent
 
         when 'dl'
-          macro 'TP'
+          push_list
           block_filter(node.children)
+          pop_list
         when 'dt'
           prev = previous(node)
-          macro 'TP' unless prev.nil?
+          macro 'TP', ["4"]
           inline_filter(node.children)
           write "\n"
         when 'dd'
-          if node.at('p')
-            block_filter(node.children)
-          else
-            inline_filter(node.children)
-          end
+          block_filter(node.children)
           write "\n"
 
         when 'ol', 'ul'
+          push_list
           block_filter(node.children)
-          macro 'IP', %w["" 0]
+          pop_list
+          #macro 'IP', ["", current_list_indent.to_s]
         when 'li'
           case node.parent.name
           when 'ol'
+<<<<<<< HEAD
             macro 'IP', %W["#{node.parent.children.index(node) + 1}." 4]
+=======
+            # FIXME: This numbering is incorrect. It used the "position" method from Hpricot,
+            # and I don't see a Nokogiri equivalent
+            #macro 'IP', ["#{node.position + 1}.", current_list_indent.to_s]
+            macro 'IP', ["#{0 + 1}.", current_list_indent.to_s]
+>>>>>>> WIP: nested lists
           when 'ul'
-            macro 'IP', ['"\\[ci]"', '4']
+            macro 'IP', ['\\(bu', current_list_indent.to_s]
           else
             raise "List element found as a child of non-list parent element: #{node.inspect}"
           end
@@ -173,7 +195,7 @@ module Ronn
           else
             inline_filter(node.children)
           end
-          write "\n"
+          #write "\n"
 
         when 'span', 'code', 'b', 'strong', 'kbd', 'samp', 'var', 'em', 'i',
              'u', 'br', 'a'
